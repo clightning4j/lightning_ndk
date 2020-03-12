@@ -17,9 +17,11 @@ unpackdep() {
     rm ${archive}
 }
 
-# build lightning deps
-LNBUILDROOT=$PWD/ln_build_root
+# build deps
+LNBUILDROOT=$PWD/build_root
 mkdir $LNBUILDROOT
+TORBUILDROOT=$PWD/tor_build_root
+mkdir $TORBUILDROOT
 
 export ANDROID_NDK_HOME=/opt/android-ndk-r20b
 export PATH=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin:${PATH}
@@ -48,9 +50,7 @@ if [ -f /proc/cpuinfo ]; then
     num_jobs=$(grep ^processor /proc/cpuinfo | wc -l)
 fi
 
-## build cln first
-
-# sqlite
+# build sqlite
 unpackdep https://www.sqlite.org/2018/sqlite-autoconf-3260000.tar.gz 5daa6a3fb7d1e8c767cd59c4ded8da6e4b00c61d3b466d0685e35c4dd6d7bf5d
 cd sqlite-autoconf-3260000
 ./configure --enable-static --disable-readline --disable-threadsafe --host=${target_host} CC=$CC --prefix=${LNBUILDROOT}
@@ -59,7 +59,7 @@ make install
 cd ..
 rm -rf sqlite-autoconf-3260000
 
-# gmp
+# build gmp
 unpackdep https://gmplib.org/download/gmp/gmp-6.1.2.tar.bz2 5275bb04f4863a13516b2f39392ac5e272f5e1bb8057b18aec1c9b79d73d8fb2
 cd gmp-6.1.2
 ./configure --enable-static --disable-assembly --host=${target_host} CC=$CC --prefix=${LNBUILDROOT}
@@ -67,6 +67,40 @@ make -j $num_jobs
 make install
 cd ..
 rm -rf gmp-6.1.2
+
+# build libevent
+unpackdep https://github.com/libevent/libevent/archive/release-2.1.11-stable.tar.gz 229393ab2bf0dc94694f21836846b424f3532585bac3468738b7bf752c03901e
+cd libevent-release-2.1.11-stable
+./autogen.sh
+./configure --prefix=$TORBUILDROOT/libevent --enable-static --disable-samples \
+            --disable-openssl --disable-shared --disable-libevent-regress --disable-debug-mode \
+            --disable-dependency-tracking --host $target_host
+make -o configure install -j${num_jobs}
+cd ..
+
+# build zlib
+unpackdep https://github.com/madler/zlib/archive/v1.2.11.tar.gz 629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff
+cd zlib-1.2.11
+
+./configure --static --prefix=$TORBUILDROOT/zlib
+make -o configure install -j${num_jobs}
+cd ..
+
+# build openssl
+unpackdep https://github.com/openssl/openssl/archive/OpenSSL_1_1_1d.tar.gz 23011a5cc78e53d0dc98dfa608c51e72bcd350aa57df74c5d5574ba4ffb62e74
+
+cd openssl-OpenSSL_1_1_1d
+SSLOPT="no-gost no-shared no-dso no-ssl3 no-idea no-hw no-dtls no-dtls1 \
+        no-weak-ssl-ciphers no-comp -fvisibility=hidden no-err no-psk no-srp"
+
+if [ "$bits" = "64" ]; then
+    SSLOPT="$SSLOPT enable-ec_nistp_64_gcc_128"
+fi
+./Configure android-$NDKARCH --prefix=$TORBUILDROOT/openssl $SSLOPT
+make depend
+make -j${num_jobs} 2> /dev/null
+make install_sw
+cd ..
 
 # download lightning
 git clone https://github.com/ElementsProject/lightning.git lightning
@@ -104,7 +138,6 @@ make -j $num_jobs PIE=1 DEVELOPER=0
 deactivate
 cd ..
 
-
 export CFLAGS="-flto"
 export LDFLAGS="$CFLAGS -pie -static-libstdc++ -fuse-ld=lld"
 # build core
@@ -124,46 +157,6 @@ make -j ${num_jobs}
 make install
 $STRIP depends/${target_host/v7a/}/bin/${reponame}d
 cd ..
-
-# build tor deps
-TORBUILDROOT=$PWD/tor_build_root
-mkdir $TORBUILDROOT
-
-# build libevent
-unpackdep https://github.com/libevent/libevent/archive/release-2.1.11-stable.tar.gz 229393ab2bf0dc94694f21836846b424f3532585bac3468738b7bf752c03901e
-cd libevent-release-2.1.11-stable
-./autogen.sh
-./configure --prefix=$TORBUILDROOT/libevent --enable-static --disable-samples \
-            --disable-openssl --disable-shared --disable-libevent-regress --disable-debug-mode \
-            --disable-dependency-tracking --host $target_host
-make -o configure install -j${num_jobs}
-cd ..
-
-# build zlib
-unpackdep https://github.com/madler/zlib/archive/v1.2.11.tar.gz 629380c90a77b964d896ed37163f5c3a34f6e6d897311f1df2a7016355c45eff
-cd zlib-1.2.11
-
-./configure --static --prefix=$TORBUILDROOT/zlib
-make -o configure install -j${num_jobs}
-cd ..
-
-
-# build openssl
-unpackdep https://github.com/openssl/openssl/archive/OpenSSL_1_1_1d.tar.gz 23011a5cc78e53d0dc98dfa608c51e72bcd350aa57df74c5d5574ba4ffb62e74
-
-cd openssl-OpenSSL_1_1_1d
-SSLOPT="no-gost no-shared no-dso no-ssl3 no-idea no-hw no-dtls no-dtls1 \
-        no-weak-ssl-ciphers no-comp -fvisibility=hidden no-err no-psk no-srp"
-
-if [ "$bits" = "64" ]; then
-    SSLOPT="$SSLOPT enable-ec_nistp_64_gcc_128"
-fi
-./Configure android-$NDKARCH --prefix=$TORBUILDROOT/openssl $SSLOPT
-make depend
-make -j${num_jobs} 2> /dev/null
-make install_sw
-cd ..
-
 
 # build tor
 unpackdep https://github.com/torproject/tor/archive/tor-0.4.2.5.tar.gz 94ad248f4d852a8f38bd8902a12b9f41897c76e389fcd5b8a7d272aa265fd6c9
