@@ -35,13 +35,19 @@ export HOST=${target_host/v7a}
 export CONFIGURATOR_CC="/usr/bin/gcc"
 
 NDKARCH=arm
+BUILD=armv7
 if [ "$target_host" = "i686-linux-android" ]; then
     NDKARCH=x86
+    BUILD=x86
 elif [ "$target_host" = "x86_64-linux-android" ]; then
     NDKARCH=x86_64
+    BUILD=x86_64
 elif [ "$target_host" = "aarch64-linux-android" ]; then
     NDKARCH=arm64
+    BUILD=aarch64
 fi
+export NDKARCH=${NDKARCH}
+export BUILD=${BUILD}
 
 num_jobs=4
 if [ -f /proc/cpuinfo ]; then
