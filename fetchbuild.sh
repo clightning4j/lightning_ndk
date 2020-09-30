@@ -126,7 +126,7 @@ fi
 # download lightning
 git clone https://github.com/ElementsProject/lightning.git lightning
 cd lightning
-git checkout v0.9.0
+git checkout v0.9.1
 
 # set virtualenv for lightning
 python3 -m virtualenv venv
