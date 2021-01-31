@@ -1,0 +1,43 @@
+name: ci
+
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { TARGET_HOST: "i686-linux-android", BITS: 32}
+          - { TARGET_HOST: "armv7a-linux-androideabi", BITS: 32 }
+          - { TARGET_HOST: "aarch64-linux-android", BITS: 64 }
+          - { TARGET_HOST: "x86_64-linux-android", BITS: 64 }
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Run build deps
+        run: |
+          chmod +x ./*.sh
+          ./buster_deps.sh
+        shell: bash
+      - name: Run build
+        env:
+          TARGET_HOST: ${{ matrix.TARGET_HOST }}
+          BITS: ${{ matrix.BITS }}
+        run: |
+          ./buildenv.sh
+          ./buildlibs.sh
+          ./buildlightning.sh
+          ./buildbitcoin.sh
+          ./buildtor.sh
+          ./archive.sh
+        shell: bash
+      - name: Upload Archive
+        uses: actions/upload-artifact@v2
+        with:
+          path: |
+            ./aarch64-linux-android_lightning_ndk.tar.xz
+            ./arm-linux-androideabi_lightning_ndk.tar.xz
+            ./i686-linux-android_lightning_ndk.tar.xz
+            ./x86_64-linux-android_lightning_ndk.tar.xz
