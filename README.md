@@ -5,8 +5,7 @@ Android cross-compilation of [c-lightning](https://github.com/ElementsProject/li
 
 This project is based on [bitcoin_ndk](https://github.com/greenaddress/bitcoin_ndk) used in [ABCore](https://github.com/greenaddress/abcore).
 
-Build status: [![Build Status](https://travis-ci.com/lvaccaro/lightning_ndk.svg?branch=master)](https://travis-ci.com/lvaccaro/lightning_ndk)
-
+Build status: ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/lightningamp/lightning_ndk/ci?style=for-the-badge)
 
 ### Get binaries
 Download the artifacts from the latest github tagged release.
