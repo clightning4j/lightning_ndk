@@ -1,8 +1,8 @@
 diff --git a/cli/lightning-cli.c b/cli/lightning-cli.c
-index 692aafd7..88aee073 100644
+index c6996e6d8..889d256c6 100644
 --- a/cli/lightning-cli.c
 +++ b/cli/lightning-cli.c
-@@ -559,10 +559,11 @@ int main(int argc, char *argv[])
+@@ -694,10 +694,11 @@ int main(int argc, char *argv[])
  	fd = socket(AF_UNIX, SOCK_STREAM, 0);
  	if (strlen(rpc_filename) + 1 > sizeof(addr.sun_path))
  		errx(ERROR_USAGE, "rpc filename '%s' too long", rpc_filename);
@@ -17,10 +17,10 @@ index 692aafd7..88aee073 100644
  		    "Connecting to '%s'", rpc_filename);
  
 diff --git a/lightningd/jsonrpc.c b/lightningd/jsonrpc.c
-index eda94421..1270b34c 100644
+index 585fa4014..2e825ab61 100644
 --- a/lightningd/jsonrpc.c
 +++ b/lightningd/jsonrpc.c
-@@ -1139,18 +1139,19 @@ void jsonrpc_listen(struct jsonrpc *jsonrpc, struct lightningd *ld)
+@@ -1179,18 +1179,19 @@ void jsonrpc_listen(struct jsonrpc *jsonrpc, struct lightningd *ld)
  	}
  	if (strlen(rpc_filename) + 1 > sizeof(addr.sun_path))
  		errx(1, "rpc filename '%s' too long", rpc_filename);
@@ -44,26 +44,23 @@ index eda94421..1270b34c 100644
  	umask(old_umask);
  
 diff --git a/plugins/libplugin.c b/plugins/libplugin.c
-index e9c9cd12..e3897ab1 100644
+index 20b0020f9..2079a0cbf 100644
 --- a/plugins/libplugin.c
 +++ b/plugins/libplugin.c
-@@ -796,13 +796,13 @@ static struct command_result *handle_init(struct command *cmd,
+@@ -845,11 +845,14 @@ static struct command_result *handle_init(struct command *cmd,
  		if (strlen(p->rpc_location) + 1 > sizeof(addr.sun_path))
  			plugin_err(p, "rpc filename '%s' too long",
  				   p->rpc_location);
--		memcpy(addr.sun_path, buf + rpctok->start,
--		       rpctok->end - rpctok->start);
--		addr.sun_path[rpctok->end - rpctok->start] = '\0';
--		addr.sun_family = AF_UNIX;
-+		memcpy(addr.sun_path + 1, buf + rpctok->start, rpctok->end - rpctok->start);
+-		strcpy(addr.sun_path, p->rpc_location);
 +		addr.sun_path[0] = '\0';
-+		addr.sun_path[rpctok->end - rpctok->start + 1] = '\0';
-+                addr.sun_family = AF_UNIX;
++		strcpy(addr.sun_path + 1, p->rpc_location);
+ 		addr.sun_family = AF_UNIX;
  
--		if (connect(p->rpc_conn->fd, (struct sockaddr *)&addr,
++		const size_t len = sizeof(addr.sun_family) +
++			strlen(p->rpc_location) + 2;
+ 		if (connect(p->rpc_conn->fd, (struct sockaddr *)&addr,
 -			    sizeof(addr)) != 0) {
-+		const size_t len = sizeof(addr.sun_family) + (rpctok->end - rpctok->start) + 1;
-+		if (connect(p->rpc_conn->fd, (struct sockaddr *)&addr, len) != 0) {
++			    len) != 0) {
  			with_rpc = false;
  			plugin_log(p, LOG_UNUSUAL,
  				   "Could not connect to '%s': %s",
