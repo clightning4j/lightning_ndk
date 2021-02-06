@@ -1,36 +1,31 @@
 # lightning_ndk
 
 
-Android cross-compilation of [c-lightning](https://github.com/ElementsProject/lightning) and [bitcoin](https://github.com/bitcoin/bitcoin) for Android >= 24 Api.
+Android cross-compilation of [c-lightning](https://github.com/ElementsProject/lightning) & [bitcoin](https://github.com/bitcoin/bitcoin) & [tor](https://github.com/torproject/tor) for Android >= 24 Api.
 
 This project is based on [bitcoin_ndk](https://github.com/greenaddress/bitcoin_ndk) used in [ABCore](https://github.com/greenaddress/abcore).
 
-Build status: ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/lightningamp/lightning_ndk/ci?style=for-the-badge)
+![GitHub Workflow Status](https://img.shields.io/github/workflow/status/lightningamp/lightning_ndk/ci?style=for-the-badge)
 
 ### Get binaries
-Download the artifacts from the latest github tagged release.
+Download the artifacts from the latest github [tagged release](https://github.com/lightningamp/lightning_ndk/releases).
 
-The package `<host>_lightning.tar.xz` contains: `ligthningd` (and ligthning deamons), ligthning plugins, esplora plugin, `ligthning-cli`, `bitcoind`, `bitcoin-cli` and `tor.`
+The package archive `.tar.xz` contains: `ligthningd` (and ligthning deamons), ligthning plugins, esplora plugin, `ligthning-cli`, `bitcoind`, `bitcoin-cli` and `tor.`
 
 ### Build from sources
 To build c-lightning with bitcoin follow the instructions:
 
 ```bash
-bash build_deps.sh
-export REPO=https://github.com/bitcoin/bitcoin.git
-export COMMIT=v0.7.3
-export TARGETHOST=aarch64-linux-android
+bash build_deps.sh #download & install android ndk toolchain
+export TARGET_HOST=aarch64-linux-android
 export BITS=64
-export BUILD=aarch64
-bash fetchbuild.sh $REPO $COMMIT $REPONAME $RENAME $CONFIGURE $TARGETHOST $BITS
+./buildenv.sh # set the toolchain variables based on your system
+./buildlibs.sh # download & build dependency libraries
+./buildlightning.sh # download & build clightning
+./buildbitcoin.sh # download & build bitcoin core
+./buildtor.sh # download & build bitcoin core
+./archive.sh #prepare a compressed archive with the binaries
 ```
-
-Note:
-
-- `build_deps.sh`: download & install android ndk toolchain
-- `fetchbuild.sh`: download & build libraries and c-lightning with esplora plugin / bitcoin / tor.
-- `<host>-lightning.tar.xz`: the generated archive with binaries
-
 
 ### Push to the device
 Push all the binaries inside the archive to the android device, using `/data/local/tmp/` as binary folder.
@@ -46,21 +41,25 @@ Run `lightningd` and connect to a `bitcoin` node, using `/sdcard/tmp/` as datadi
 adb shell
 cd /data/local/tmp
 chmod -R +x *
-./lightningd --lightning-dir=/sdcard/tmp/ --testnet --disable-plugin esplora --bitcoin-rpcconnect=$BITCOIN_HOST --bitcoin-rpcuser=$BITCOIN_USER --bitcoin-rpcpassword=$BITCOIN_PWD --bitcoin-rpcport=$BITCOIN_PORT --bitcoin-cli=/data/local/tmp/bitcoin-cli --bitcoin-datadir=/sdcard/tmp/ --plugin-dir=/data/local/tmp/plugins --log-level=debug
+./lightningd/lightningd --lightning-dir=/sdcard/tmp/ --testnet --disable-plugin esplora
+ --bitcoin-rpcconnect=$BITCOIN_HOST --bitcoin-rpcuser=$BITCOIN_USER 
+ --bitcoin-rpcpassword=$BITCOIN_PWD --bitcoin-rpcport=$BITCOIN_PORT 
+ --bitcoin-cli=/data/local/tmp/bitcoin-cli --bitcoin-datadir=/sdcard/tmp/ 
+ --plugin-dir=/data/local/tmp/plugins --log-level=debug
 ```
 
 If you want to use the esplora plugin as bitcoin backend
 
 ```bash
-./lightningd/lightningd --lightning-dir=/sdcard/tmp/ --testnet --disable-plugin bcli --log-level=debug --esplora-api-endpoint=https://blockstream.info/testnet/api
+./lightningd/lightningd --lightning-dir=/sdcard/tmp/ --testnet --disable-plugin bcli
+--esplora-api-endpoint=https://blockstream.info/testnet/api --log-level=debug 
 ```
-
 
 ### Local testing
 Run cli command in an adb shell, as the following
 
 ```bash
-./lightning-cli --lightning-dir=/sdcard/tmp/  newaddr
+./cli/lightning-cli --lightning-dir=/sdcard/tmp/ newaddr
 ```
 
 ### Dependencies
