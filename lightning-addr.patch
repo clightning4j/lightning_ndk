@@ -57,7 +57,7 @@ index 20b0020f9..2079a0cbf 100644
  		addr.sun_family = AF_UNIX;
  
 +		const size_t len = sizeof(addr.sun_family) +
-+			strlen(p->rpc_location) + 2;
++			strlen(p->rpc_location) + 1;
  		if (connect(p->rpc_conn->fd, (struct sockaddr *)&addr,
 -			    sizeof(addr)) != 0) {
 +			    len) != 0) {
