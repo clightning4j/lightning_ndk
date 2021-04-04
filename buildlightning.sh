@@ -1,7 +1,6 @@
 #! /bin/bash
 set -eo pipefail
 
-source ./buildenv.sh
 REPOPATH=$PWD
 
 # download lightning
@@ -13,6 +12,9 @@ git checkout v0.10.0
 python3 -m virtualenv venv
 source venv/bin/activate
 pip install -r requirements.txt
+
+# load env vars
+cd .. && source ./buildenv.sh && cd lightning
 
 # provide generated config file instead run configure
 cp ${REPOPATH}/lightning-header_versions_gen.h header_versions_gen.h
