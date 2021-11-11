@@ -30,7 +30,7 @@ fi
 export NDKARCH=${NDKARCH}
 export BUILD=${BUILD}
 
-num_jobs=4
+num_jobs=$(nproc)
 if [ -f /proc/cpuinfo ]; then
     num_jobs=$(grep ^processor /proc/cpuinfo | wc -l)
 fi
