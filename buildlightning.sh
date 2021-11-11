@@ -2,11 +2,13 @@
 set -eo pipefail
 
 REPOPATH=$PWD
+CLIGHTNING_VERSION=v0.10.1
+ESPLORA_VERSION=v0.2
 
 # download lightning
 git clone https://github.com/ElementsProject/lightning.git lightning
 cd lightning
-git checkout v0.10.0
+git checkout $CLIGHTNING_VERSION
 
 # set virtualenv for lightning
 python3 -m virtualenv venv
@@ -34,10 +36,10 @@ patch -p1 < ${REPOPATH}/lightning-addr.patch
 patch -p1 < ${REPOPATH}/lightning-endian.patch
 
 # add esplora plugin
-git clone https://github.com/lvaccaro/esplora_clnd_plugin.git
-cd esplora_clnd_plugin && git checkout master && cd ..
+git clone https://github.com/clightning4j/esplora_clnd_plugin.git
+cd esplora_clnd_plugin && git checkout $ESPLORA_VERSION && cd ..
 cp esplora_clnd_plugin/esplora.c plugins/
-sed -i 's/LDLIBS = /LDLIBS = -lcurl -lssl -lcrypto /g' Makefile
+#sed -i 's/LDLIBS = -L/usr/local/lib /LDLIBS = -L/usr/local/lib -lcurl -lssl -lcrypto /g' Makefile
 patch -p1 < esplora_clnd_plugin/Makefile.patch
 
 # build external libraries and source
